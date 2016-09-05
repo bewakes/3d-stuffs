@@ -1,0 +1,97 @@
+<html>
+    <head>
+        <title> RayTracing</title>
+        <script src="raytracing/object.js"></script>
+        <script src="raytracing/raytracer.js"></script>
+    </head>
+    <body>
+        <h2>Simple Ray Tracing</h2>
+        <canvas style="border:solid 1px" id="3dcanvas" width="500" height="500"></canvas>
+    </body>
+    <script>
+        var canvas = document.getElementById("3dcanvas");
+        var h = canvas.height;var w = canvas.width;
+        var context = canvas.getContext("2d");
+        context.fillStyle="#000000"; context.fillRect(0,0,w,h);
+
+        var camerapos = new Vector3(0, 0, -500);//camera at origin
+        var lightpos = new Vector3(20, 200, 50);
+        var raytracer = new RayTracer(lightpos, camerapos);
+        var sphere = new Sphere(
+                new Vector3(0,100,200),
+                60,
+                new Vector3(100,100,100),
+                0,
+                0,
+                new Vector3(255,255,255)
+        );
+        var objects = [];
+        objects.push(sphere);
+        objects.push(new Sphere(
+                new Vector3(100,100,300),
+                60,
+                new Vector3(100,100,100),
+                0,
+                0,
+                new Vector3(255,255,255)
+            )
+        );
+        objects.push(new Sphere(
+                new Vector3(100,150,110),
+                60,
+                new Vector3(100,100,100),
+                0,
+                0,
+                new Vector3(255,255,255)
+            )
+        );
+        var projectionplaneZ = 50;
+
+        var dir = new Vector3(0,0,projectionplaneZ);
+        console.log(camerapos);
+        dir = dir.diff(camerapos);
+        dir = dir.normalize();
+
+        var invw = 1/w, invh = 1/h;
+        var fov = 30;
+        var ar = w/h;
+        var angle = Math.tan(Math.PI*0.5*fov/180);
+
+        var pixel = context.createImageData(w,h);
+        var d = pixel.data;
+        render(lightpos, camerapos);
+        
+        function render(lightpos, camerapos) {
+            for (var y=0;y<h;y++) {
+                for(var x=0;x<w;x++) {
+                    var dir = new Vector3(x-w/2,h/2-y,projectionplaneZ);
+                    dir = dir.diff(camerapos);
+                    dir = dir.normalize();
+                    //console.log(dir);
+                    var newp = raytracer.raytrace(camerapos, dir, objects, lightpos);
+                    d[(y*h+x)*4] = newp.x;
+                    d[(y*h+x)*4+1] = newp.y;
+                    d[(y*h+x)*4+2]=newp.z;
+                    d[(y*h+x)*4+3] = 255;
+                }
+            }
+            context.putImageData(pixel, 0,0);
+        }
+        document.onkeypress = function (e) {
+            var key= e.which;
+            if(key==97)
+                objects[0].center.x-=10;
+            else if(key==100)
+                objects[0].center.x+=10;
+            else if (key==119)
+                objects[0].center.y+=10;
+            else if (key==115)
+                objects[0].center.y-=10;
+            else if (key==122)
+                objects[0].center.z-=10;
+            else if (key==120)
+                objects[0].center.z+=10;
+            render(lightpos, camerapos);
+        }
+    </script>
+<html>
