@@ -15,47 +15,63 @@
         context.fillStyle="#000000"; context.fillRect(0,0,w,h);
 
         var camerapos = new Vector3(0, 0, -500);//camera at origin
-        var lightpos = new Vector3(20, 200, 50);
+        var lightpos = new Vector3(300, 900, -50);
         var raytracer = new RayTracer(lightpos, camerapos);
         var sphere = new Sphere(
-                new Vector3(0,100,200),
+                new Vector3(-50,30,200),
                 60,
-                new Vector3(100,100,100),
+                new Vector3(0,0,0.9),
                 0,
-                0,
-                new Vector3(255,255,255)
+                0.4
         );
         var objects = [];
         objects.push(sphere);
         objects.push(new Sphere(
-                new Vector3(100,100,300),
+                new Vector3(100,50,300),
                 60,
-                new Vector3(100,100,100),
+                new Vector3(0.8,0,0),
                 0,
-                0,
-                new Vector3(255,255,255)
+                0.3
             )
         );
+        /*
+        // light, emission color
         objects.push(new Sphere(
-                new Vector3(100,150,110),
+                new Vector3(100,50,300),
                 60,
-                new Vector3(100,100,100),
+                new Vector3(1,1,1),
                 0,
-                0,
-                new Vector3(255,255,255)
+                0.3,
+                new Vector3(1,1,1)
             )
         );
+        */
+        
         var projectionplaneZ = 50;
+var g_max_h = 400, g_gap = 5, g_n= 6;
+        var dimx=2, dimy=3;
 
         var dir = new Vector3(0,0,projectionplaneZ);
         console.log(camerapos);
         dir = dir.diff(camerapos);
         dir = dir.normalize();
 
-        var invw = 1/w, invh = 1/h;
-        var fov = 30;
-        var ar = w/h;
-        var angle = Math.tan(Math.PI*0.5*fov/180);
+        var points = getIntermediatePoints({x:0,y:0},{x:2,y:3});
+        objects = getCircles(points);
+        points = getIntermediatePoints({x:1,y:1},{x:5,y:-2});
+        var circs = getCircles(points);
+        for(var i=0;i<points.length;i++) {
+            objects.push(circs[i]);
+        }
+        objects.push(new Sphere(
+                new Vector3(-100,-8200,100),
+                8000,
+                new Vector3(0.5,0.5,0.5),
+                0,
+                0.3
+            )
+        );
+        console.log(objects);
 
         var pixel = context.createImageData(w,h);
         var d = pixel.data;
@@ -68,30 +84,61 @@
                     dir = dir.diff(camerapos);
                     dir = dir.normalize();
                     //console.log(dir);
-                    var newp = raytracer.raytrace(camerapos, dir, objects, lightpos);
-                    d[(y*h+x)*4] = newp.x;
-                    d[(y*h+x)*4+1] = newp.y;
-                    d[(y*h+x)*4+2]=newp.z;
+                    var newp = raytracer.raytrace(camerapos, dir, objects, lightpos, 0);
+                    d[(y*h+x)*4] = newp.x*255;
+                    d[(y*h+x)*4+1] = newp.y*255;
+                    d[(y*h+x)*4+2]=newp.z*255;
                     d[(y*h+x)*4+3] = 255;
                 }
             }
             context.putImageData(pixel, 0,0);
         }
-        document.onkeypress = function (e) {
-            var key= e.which;
-            if(key==97)
-                objects[0].center.x-=10;
-            else if(key==100)
-                objects[0].center.x+=10;
-            else if (key==119)
-                objects[0].center.y+=10;
-            else if (key==115)
-                objects[0].center.y-=10;
-            else if (key==122)
-                objects[0].center.z-=10;
-            else if (key==120)
-                objects[0].center.z+=10;
-            render(lightpos, camerapos);
+
+        function generateSpheres() {
+
         }
+        function getIntermediatePoints(p1,p2) {
+
+            var dx = p2.x-p1.x;
+            var dy = p2.y-p1.y;
+            var points = [];
+            var inc;
+            if(Math.abs(dx)>Math.abs(dy)){
+                inc = Math.abs(1/(1.7*dx));
+            }
+            else {
+                inc = Math.abs(1/(1.7*dy));
+            }
+
+            for(var k=0;k<=1;k+=inc) {
+                points.push({x:p1.x+k*dx,y:p1.y+k*dy});
+            }
+            
+            return points;
+        }
+        
+        function getCircles(points) {
+            var spheres = [];
+            var z = 400;
+            for (var x in points) {
+                var r = g_max_h - (g_n-1)*g_gap;
+                r = r/(1.5*g_n);
+                var cx = h/dimy * points[x].x;
+                var cy = h/dimy * points[x].y;
+
+                spheres.push(
+                    new Sphere(
+                        new Vector3(cx-300,cy-100,z),
+                        r,
+                        new Vector3(Math.random(), Math.random(),Math.random()),
+                        0,
+                        0.5
+                    )
+                );
+                z-=15;
+            }
+            return spheres;
+        }
+
     </script>
 <html>
